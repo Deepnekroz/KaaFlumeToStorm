@@ -1,7 +1,24 @@
+/*
+ * Copyright 2014-2015 CyberVision, Inc.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ *
+ */
+
 package com.storm.flume.spout;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.flume.Channel;
@@ -29,9 +46,7 @@ import com.storm.flume.common.MaterializedConfigurationProvider;
 import com.storm.flume.common.StormEmbeddedAgentConfiguration;
 import com.storm.flume.producer.AvroTupleProducer;
 
-/**
- * @author Ravikumar Visweswara
- */
+
 
 @SuppressWarnings("serial")
 public class FlumeSourceSpout implements IRichSpout {
@@ -44,14 +59,13 @@ public class FlumeSourceSpout implements IRichSpout {
 	public static final int DEFAULT_BATCH_SIZE = 100;
 
 	private Channel channel;
-	private MaterializedConfigurationProvider configurationProvider;
 	private SourceRunner sourceRunner;
-	private SinkCounter sinkCounter;
-
 	private int batchSize = DEFAULT_BATCH_SIZE;
+	private SinkCounter sinkCounter;
+	private MaterializedConfigurationProvider configurationProvider;
+	private SpoutOutputCollector outputCollector;
 
-	private SpoutOutputCollector collector;
-
+	//TODO Are we need it?
 	private ConcurrentHashMap<String, Event> pendingMessages;
 	
     private String flumePropertyPrefix = DEFAULT_FLUME_PROPERTY_PREFIX;
@@ -64,41 +78,32 @@ public class FlumeSourceSpout implements IRichSpout {
 		this.flumePropertyPrefix = flumePropertPrefix;
 	}
 
-	public SpoutOutputCollector getCollector() {
-		return collector;
+	public SpoutOutputCollector getOutputCollector() {
+		return outputCollector;
 	}
 
 	public ConcurrentHashMap<String, Event> getPendingMessages() {
 		return pendingMessages;
 	}
 
-	private AvroTupleProducer tupleProducer;
+	private AvroTupleProducer avroTupleProducer;
 
-	public AvroTupleProducer getTupleProducer() {
-		return tupleProducer;
+	public AvroTupleProducer getAvroTupleProducer() {
+		return avroTupleProducer;
 	}
 
-	public void setTupleProducer(AvroTupleProducer tupleProducer) {
-		this.tupleProducer = tupleProducer;
+	public void setAvroTupleProducer(AvroTupleProducer avroTupleProducer) {
+		this.avroTupleProducer = avroTupleProducer;
 	}
 
-	/*
-	 * Makes sure Tuple producer is configured, channel is initialized, Pending
-	 * message queue is initialized
-	 * 
-	 * @see backtype.storm.spout.ISpout#open(java.util.Map,
-	 * backtype.storm.task.TopologyContext,
-	 * backtype.storm.spout.SpoutOutputCollector)
-	 */
 	@SuppressWarnings("rawtypes")
 	public void open(Map config, TopologyContext context,
 			SpoutOutputCollector collector) {
-
 		this.configurationProvider = new MaterializedConfigurationProvider();
 		
 		Map<String, String> flumeAgentProps = Maps.newHashMap();
 		for (Object key : config.keySet()) {
-			LOG.debug("StormFlumeSourceSpout conf property:" + key.toString() + ":" + config.get(key));
+			LOG.debug("StormFlumeSourceSpout configuration:" + key.toString() + ":" + config.get(key));
 			if (key.toString().startsWith(getFlumePropertyPrefix())) {
 				// Since there will not be any sink component configured for
 				// storm. batch size needs to be ignored
@@ -142,11 +147,11 @@ public class FlumeSourceSpout implements IRichSpout {
 			sinkCounter = new SinkCounter(FlumeSourceSpout.class.getName());
 		}
 
-		if (null == this.getTupleProducer()) {
+		if (null == this.getAvroTupleProducer()) {
 			throw new IllegalStateException("Tuple Producer has not been set.");
 		}
 
-		this.collector = collector;
+		this.outputCollector = collector;
 		this.pendingMessages = new ConcurrentHashMap<String, Event>();
 
 		try {
@@ -200,6 +205,7 @@ public class FlumeSourceSpout implements IRichSpout {
 	 * 
 	 * @see backtype.storm.spout.ISpout#activate()
 	 */
+    @Override
 	public void activate() {
 		// TODO Auto-generated method stub
 	}
@@ -209,19 +215,20 @@ public class FlumeSourceSpout implements IRichSpout {
 	 * 
 	 * @see backtype.storm.spout.ISpout#deactivate()
 	 */
+    @Override
 	public void deactivate() {
 		// TODO Auto-generated method stub
 	}
-
+    @Override
 	public void nextTuple() {
 
 		//Transaction Begins
 		Transaction transaction = channel.getTransaction();
+
 		int size = 0;
 		try {
 			transaction.begin();
 			List<Event> batch = Lists.newLinkedList();
-			
 			//Get all the messages upto the batch size into memory
 			for (int i = 0; i < this.batchSize; i++) {
 				Event event = channel.take();
@@ -247,8 +254,10 @@ public class FlumeSourceSpout implements IRichSpout {
 			// Emit all the the events in the topology before committing the
 			// transaction
 			for (Event event : batch) {
-				Values vals = this.getTupleProducer().toTuple(event);
-				this.collector.emit(vals);
+
+				Values vals = this.getAvroTupleProducer().toTuple(event);
+
+				this.outputCollector.emit(vals, event);
 				this.pendingMessages.put(
 						event.getHeaders().get(Constants.MESSAGE_ID), event);
 				LOG.debug("NextTuple:"
@@ -285,37 +294,43 @@ public class FlumeSourceSpout implements IRichSpout {
 	 * 
 	 * @see backtype.storm.spout.ISpout#ack(java.lang.Object)
 	 */
+    @Override
 	public void ack(Object msgId) {
 		this.pendingMessages.remove(msgId);
+
+		System.out.println("IN>> [" + Thread.currentThread().getId() + "] message " +
+				msgId + " processed successfully");
 	}
 
-	/*
-	 * When a message fails, retry the message
-	 * 
-	 * @see backtype.storm.spout.ISpout#fail(java.lang.Object)
-	 */
+
+	@Override
 	public void fail(Object msgId) {
-		// TODO Implement failed message retry
+		//TODO implement retry
+        Event event = (Event)msgId;
+        System.out.println("FAILED Event data: "+new String(event.getBody()));
+        /*
+		Event m = this.pendingMessages.get(msgId);
+		channel.put();
+		if(++m.failCount > MAX_RETRY_COUNT) {
+			throw new IllegalStateException("Too many message processing errors");
+		}
+		System.out.println("IN>> [" + Thread.currentThread().getId() + "] message " +
+				m.message + " processing failed " + "[" + m.failCount + "]");
+// Вставляем в очередь на повторную обработку
+		sendQueue.addLast((Integer) msgId);
+		*/
 	}
 
-	/*
-	 * Component configuration
-	 * 
-	 * @see backtype.storm.topology.IComponent#getComponentConfiguration()
-	 */
+    @Override
 	public Map<String, Object> getComponentConfiguration() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	/*
-	 * declaration of fields will be delegated to the Tuple producer
-	 * 
-	 * @see
-	 * backtype.storm.topology.IComponent#declareOutputFields(backtype.storm
-	 * .topology.OutputFieldsDeclarer)
-	 */
+    @Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		this.getTupleProducer().declareOutputFields(declarer);
+		this.getAvroTupleProducer().declareOutputFields(declarer);
 	}
+
+
 }

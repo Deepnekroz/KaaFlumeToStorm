@@ -1,3 +1,21 @@
+/*
+ * Copyright 2014-2015 CyberVision, Inc.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ *
+ */
+
 package com.storm.flume.common;
 
 import java.util.Arrays;
@@ -7,21 +25,15 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.flume.FlumeException;
-import org.apache.flume.agent.embedded.EmbeddedSource;
 import org.apache.flume.annotations.InterfaceAudience;
 import org.apache.flume.annotations.InterfaceStability;
 import org.apache.flume.conf.BasicConfigurationConstants;
 import org.apache.flume.conf.channel.ChannelType;
-import org.apache.flume.conf.sink.SinkProcessorType;
-import org.apache.flume.conf.sink.SinkType;
 import org.apache.flume.conf.source.SourceType;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-/**
- * @author Ravikumar Visweswara
- */
+
 
 /**
  * Stores publicly accessible configuration constants and private
@@ -75,8 +87,11 @@ public class StormEmbeddedAgentConfiguration {
    */
   public static final String SOURCE_TYPE_AVRO = SourceType.AVRO.name();
 
+  public static final String SOURCE_TYPE_HTTP = SourceType.HTTP.name();
+
   private static final String[] ALLOWED_SOURCES = {
-    SOURCE_TYPE_AVRO
+    SOURCE_TYPE_AVRO,
+    SOURCE_TYPE_HTTP
   };
 
   private static final String[] ALLOWED_CHANNELS = {

@@ -1,20 +1,27 @@
 package com.storm.flume.bolt;
 
-/**
- * @author Ravikumar Visweswara
+/*
+ * Copyright 2014-2015 CyberVision, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 import java.util.Map;
 import java.util.Properties;
-
 import org.apache.flume.Event;
-import org.apache.flume.FlumeException;
-import org.apache.flume.api.RpcClient;
-import org.apache.flume.api.RpcClientFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.storm.flume.producer.AvroFlumeEventProducer;
-
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
@@ -28,7 +35,6 @@ public class AvroSinkBolt implements IRichBolt {
     public static final String DEFAULT_FLUME_PROPERTY_PREFIX = "flume-avro-forward";
     
     private Properties sinkProperties;
-    private RpcClient client;
     private AvroFlumeEventProducer producer;
     private OutputCollector collector;
     private String flumePropertyPrefix = DEFAULT_FLUME_PROPERTY_PREFIX;
@@ -63,37 +69,32 @@ public class AvroSinkBolt implements IRichBolt {
 									""), (String) config.get(key));
 			}
 		}
-		
-        try {
-            createConnection();
-            LOG.info("Created connections for flume sources");
-        } catch (Exception e) {
-            LOG.error("Error creating RpcClient connection.", e);
-            destroyConnection();
-        }
+
     }
 
     public void execute(Tuple input) {
 
         try {
-            verifyConnection();
             Event event = this.producer.toEvent(input);
             LOG.info("Event Created: " + event.toString() + ":MSG:" + new String(event.getBody()));
-            if (event != null) {
-                this.client.append(event);
-                this.collector.ack(input);
-            }
+
+            //Example of failed Tuple
+            if("wrong text".equals(new String(event.getBody())))
+                throw new ClassCastException();
+
+            //All seems to be nice, notify spout about it
+            this.collector.ack(input);
+
         } catch (Exception e) {
             LOG.warn("Failing tuple: " + input);
             LOG.warn("Exception: ", e);
+            //Notify spout about fail
             this.collector.fail(input);
         }
     }
 
     @Override
     public void cleanup() {
-    	LOG.info("Executing cleanup");
-    	destroyConnection();
     }
 
     @Override
@@ -105,45 +106,7 @@ public class AvroSinkBolt implements IRichBolt {
         return null;
     }
 
-    private void createConnection() throws Exception {
-        if (client == null) {
-            LOG.info("Avro Bolt: Building RpcClient with properties:" + sinkProperties.toString());
-            if(this.sinkProperties == null){
-            	throw new FlumeException("Flume Avro Source properties are not set");
-            }
-            try {
-                this.client = RpcClientFactory.getInstance(this.sinkProperties);
-            } catch (Exception e) {
-                LOG.error("Error creating RpcClient with properties:" + sinkProperties.toString());
-                throw e;
-            }
-            LOG.info("Avro Bolt Created RpcClient with properties:" + sinkProperties.toString());
-        }
-    }
 
-    private void destroyConnection() {
-        if (client != null) {
-            LOG.info("Avro Bolt: Closing RpcClient");
-            try {
-                this.client.close();
-            } catch (Exception e) {
-                LOG.error("Error closing RpcClient");
-            }
-            client = null;
-            LOG.info("Closed RpcClient with hostname:");
-        }
-    }
 
-    private void verifyConnection() throws Exception {
-        try {
-            if (client == null) {
-                createConnection();
-            } else if (!client.isActive()) {
-                destroyConnection();
-                createConnection();
-            }
-        } catch (Exception e) {
-            LOG.error("Error verifing RpcClient");
-        }
-    }
+
 }

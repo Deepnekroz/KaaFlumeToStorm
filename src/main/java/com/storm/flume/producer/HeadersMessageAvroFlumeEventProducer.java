@@ -1,3 +1,21 @@
+/*
+ * Copyright 2014-2015 CyberVision, Inc.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ *
+ */
+
 package com.storm.flume.producer;
 
 import backtype.storm.tuple.Tuple;
@@ -9,9 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-/**
- * @author Ravikumar Visweswara
- */
+
 
 @SuppressWarnings("serial")
 public class HeadersMessageAvroFlumeEventProducer implements AvroFlumeEventProducer {
@@ -27,9 +43,9 @@ public class HeadersMessageAvroFlumeEventProducer implements AvroFlumeEventProdu
     @SuppressWarnings("unchecked")
     public Event toEvent(Tuple input) throws Exception {
 
-        Map<String, String> headers = null;
-        Object headerObj = null;
-        String messageStr = null;
+        Map<String, String> headers;
+        Object headerObj;
+        String messageStr;
 
 		/*If the number of parameters are two, they are assumed as headers and Message
 		 *For any other types of input will be thrown an error.
@@ -42,14 +58,11 @@ public class HeadersMessageAvroFlumeEventProducer implements AvroFlumeEventProdu
             throw new IllegalStateException("Wrong format of touple expected 2. But found " + input.size());
         }
 
-        try {
-            LOG.debug("HeadersMessageAvroFlumeEventProducer:MSG:" + messageStr);
+        LOG.debug("HeadersMessageAvroFlumeEventProducer:MSG:" + messageStr);
 
-            Event event = EventBuilder.withBody(messageStr.getBytes(), headers);
-            return event;
-        } catch (Exception e) {
-            throw e;
-        }
+
+        return EventBuilder.withBody(messageStr.getBytes(), headers);
+
     }
 
 }

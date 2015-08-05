@@ -1,3 +1,21 @@
+/*
+ * Copyright 2014-2015 CyberVision, Inc.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ *
+ */
+
 package com.storm.flume.producer;
 
 import java.util.HashMap;
@@ -12,9 +30,7 @@ import com.storm.flume.common.Constants;
 
 import backtype.storm.tuple.Tuple;
 
-/**
- * @author Ravikumar Visweswara
- */
+
 
 @SuppressWarnings("serial")
 public class SimpleAvroFlumeEventProducer implements AvroFlumeEventProducer {
@@ -30,10 +46,10 @@ public class SimpleAvroFlumeEventProducer implements AvroFlumeEventProducer {
 	@SuppressWarnings("unchecked")
 	public Event toEvent(Tuple input) throws Exception {
 		
-		Map<String, String> headers = null;
-		Object headerObj = null;
-		Object messageObj = null;
-		String messageStr = null;
+		Map<String, String> headers;
+		Object headerObj;
+		Object messageObj;
+		String messageStr;
 		
 		/*If the number of parameters are two, they are assumed as MessageId and Message
 		 *If the number of parameters are three, they are assumed as MessageId, Headers and Message
@@ -52,17 +68,13 @@ public class SimpleAvroFlumeEventProducer implements AvroFlumeEventProducer {
 		}else{
 			throw new IllegalStateException("Wrong format of touple expected 2 or 3 values. But found " + input.size());
 		}
-		
-		try {
-			messageStr = (String)messageObj;
+
+		messageStr = (String)messageObj;
 		   
-			LOG.debug("SimpleAvroFlumeEventProducer:MSG:" + messageStr);		    
-			
-			Event event = EventBuilder.withBody(messageStr.getBytes(), headers);
-			return event;
-		} catch (Exception e){
-			throw e;
-		}
+		LOG.debug("SimpleAvroFlumeEventProducer:MSG:" + messageStr);
+
+		return EventBuilder.withBody(messageStr.getBytes(), headers);
+
 	}
 
 }

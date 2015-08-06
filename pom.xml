@@ -111,11 +111,9 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/lib/kaa-record-lib-l2.jar</systemPath>
         </dependency>
-
     </dependencies>
 
     <build>
-
         <pluginManagement>
             <plugins>
                 <plugin>

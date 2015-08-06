@@ -115,9 +115,9 @@
             </exclusions>
         </dependency>
         <dependency>
-          <groupId>org.apache.hadoop</groupId>
-  		  <artifactId>hadoop-common</artifactId>
-  		  <version>${hadoop.version}</version>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+            <version>${hadoop.version}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>slf4j-log4j12</artifactId>

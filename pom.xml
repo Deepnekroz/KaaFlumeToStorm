@@ -8,11 +8,11 @@
     <artifactId>storm-flume-connectors</artifactId>
     <name>storm-flume-connectors</name>
     <url>http://maven.apache.org</url>
-	<properties>
-		<flume.version>1.5.0</flume.version>
-		<hadoop.version>2.4.0</hadoop.version>
+    <properties>
+	<flume.version>1.5.0</flume.version>
+	<hadoop.version>2.4.0</hadoop.version>
         <kaa.version>0.7.1</kaa.version>
-	</properties>
+    </properties>
 
 
     <repositories>

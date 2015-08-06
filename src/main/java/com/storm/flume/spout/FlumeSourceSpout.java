@@ -1,26 +1,14 @@
-/*
- * Copyright 2014-2015 CyberVision, Inc.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- *
- */
+
 
 package com.storm.flume.spout;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
+import backtype.storm.spout.SpoutOutputCollector;
+import backtype.storm.task.TopologyContext;
+import backtype.storm.topology.IRichSpout;
+import backtype.storm.topology.OutputFieldsDeclarer;
+import backtype.storm.tuple.Values;
+import backtype.storm.utils.Utils;
 import org.apache.flume.Channel;
 import org.apache.flume.ChannelException;
 import org.apache.flume.Event;
@@ -31,14 +19,6 @@ import org.apache.flume.instrumentation.SinkCounter;
 import org.apache.flume.node.MaterializedConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import backtype.storm.spout.SpoutOutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichSpout;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.Values;
-import backtype.storm.utils.Utils;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.storm.flume.common.Constants;
@@ -47,43 +27,23 @@ import com.storm.flume.common.StormEmbeddedAgentConfiguration;
 import com.storm.flume.producer.AvroTupleProducer;
 
 
-
 @SuppressWarnings("serial")
 public class FlumeSourceSpout implements IRichSpout {
-
-	private static final Logger LOG = LoggerFactory
-			.getLogger(FlumeSourceSpout.class);
-	public static final String DEFAULT_FLUME_PROPERTY_PREFIX = "flume-agent";
-	public static final String FLUME_AGENT_NAME = "flume-agent";
-	public static final String FLUME_BATCH_SIZE = "batch-size";
-	public static final int DEFAULT_BATCH_SIZE = 100;
+	public static final String FLUME_PROPERTY_PREFIX = "flume-agent";
+	public static final String PROP_FLUME_AGENT_NAME = "flume-agent";
+	public static final String PROP_FLUME_BATCH_SIZE = "batch-size";
+	public static final int BATCH_SIZE = 100;
 
 	private Channel channel;
 	private SourceRunner sourceRunner;
-	private int batchSize = DEFAULT_BATCH_SIZE;
+	private int batchSize = BATCH_SIZE;
 	private SinkCounter sinkCounter;
-	private MaterializedConfigurationProvider configurationProvider;
 	private SpoutOutputCollector outputCollector;
+	private static final Logger LOG = LoggerFactory.getLogger(FlumeSourceSpout.class);
 
-	//TODO Are we need it?
-	private ConcurrentHashMap<String, Event> pendingMessages;
-	
-    private String flumePropertyPrefix = DEFAULT_FLUME_PROPERTY_PREFIX;
 
     public String getFlumePropertyPrefix() {
-		return flumePropertyPrefix;
-	}
-
-	public void setFlumePropertyPrefix(String flumePropertPrefix) {
-		this.flumePropertyPrefix = flumePropertPrefix;
-	}
-
-	public SpoutOutputCollector getOutputCollector() {
-		return outputCollector;
-	}
-
-	public ConcurrentHashMap<String, Event> getPendingMessages() {
-		return pendingMessages;
+		return FLUME_PROPERTY_PREFIX;
 	}
 
 	private AvroTupleProducer avroTupleProducer;
@@ -99,33 +59,27 @@ public class FlumeSourceSpout implements IRichSpout {
 	@SuppressWarnings("rawtypes")
 	public void open(Map config, TopologyContext context,
 			SpoutOutputCollector collector) {
-		this.configurationProvider = new MaterializedConfigurationProvider();
+		MaterializedConfigurationProvider configurationProvider = new MaterializedConfigurationProvider();
 		
 		Map<String, String> flumeAgentProps = Maps.newHashMap();
 		for (Object key : config.keySet()) {
-			LOG.debug("StormFlumeSourceSpout configuration:" + key.toString() + ":" + config.get(key));
+			LOG.debug("Spout config:" + key.toString() + ":" + config.get(key));
 			if (key.toString().startsWith(getFlumePropertyPrefix())) {
-				// Since there will not be any sink component configured for
-				// storm. batch size needs to be ignored
-				if (key.toString().contains(FLUME_BATCH_SIZE)) {
+				if (key.toString().contains(PROP_FLUME_BATCH_SIZE)) {
 					String batchSizeStr = (String) config.get(key);
 					try {
 						this.batchSize = Integer.parseInt(batchSizeStr);
 					} catch (Exception e) {
-						// tolerate this error and default it to the default
-						// batch size
-						this.batchSize = DEFAULT_BATCH_SIZE;
+						this.batchSize = BATCH_SIZE;
 					}
 				} else {
-					flumeAgentProps.put(
-							key.toString().replace(getFlumePropertyPrefix() + ".",
-									""), (String) config.get(key));
+					flumeAgentProps.put(key.toString().replace(getFlumePropertyPrefix() + ".",""), (String) config.get(key));
 				}
 			}
 		}
 
 		flumeAgentProps = StormEmbeddedAgentConfiguration.configure(
-				FLUME_AGENT_NAME, flumeAgentProps);
+				PROP_FLUME_AGENT_NAME, flumeAgentProps);
 		MaterializedConfiguration conf = configurationProvider.get(
 				getFlumePropertyPrefix(), flumeAgentProps);
 
@@ -152,18 +106,15 @@ public class FlumeSourceSpout implements IRichSpout {
 		}
 
 		this.outputCollector = collector;
-		this.pendingMessages = new ConcurrentHashMap<String, Event>();
 
 		try {
 			this.start();
 		} catch (Exception e) {
-			LOG.warn("Error Starting Flume Source/channel", e);
+			LOG.warn("Error starting source/channel", e);
 		}
 	}
 
-	/*
-	 * Starts all the flume components like source and channels.
-	 */
+
 	private void start() {
 		if (null == this.sourceRunner || null == this.channel) {
 			throw new FlumeException(
@@ -174,9 +125,6 @@ public class FlumeSourceSpout implements IRichSpout {
 		this.sinkCounter.start();
 	}
 
-	/*
-	 * Stops all the flume components like source and channels
-	 */
 	private void stop() {
 		if (null == this.sourceRunner || null == this.channel) {
 			return;
@@ -186,11 +134,7 @@ public class FlumeSourceSpout implements IRichSpout {
 		this.sinkCounter.stop();
 	}
 
-	/*
-	 * On close, Flume components needs to be stopped
-	 * 
-	 * @see backtype.storm.spout.ISpout#close()
-	 */
+
 	public void close() {
 		try {
 			this.stop();
@@ -199,37 +143,25 @@ public class FlumeSourceSpout implements IRichSpout {
 		}
 	}
 
-	/*
-	 * Since FlumeSource, Channel is not deactivated, we dont need to activate
-	 * FlumeSource, Channel
-	 * 
-	 * @see backtype.storm.spout.ISpout#activate()
-	 */
     @Override
 	public void activate() {
-		// TODO Auto-generated method stub
 	}
 
-	/*
-	 * On Deactivation, we dont need to stop the FlumeSource, Channel
-	 * 
-	 * @see backtype.storm.spout.ISpout#deactivate()
-	 */
+
     @Override
 	public void deactivate() {
-		// TODO Auto-generated method stub
 	}
     @Override
 	public void nextTuple() {
 
-		//Transaction Begins
+		LOG.debug("Transaction begins...");
 		Transaction transaction = channel.getTransaction();
 
 		int size = 0;
 		try {
 			transaction.begin();
 			List<Event> batch = Lists.newLinkedList();
-			//Get all the messages upto the batch size into memory
+
 			for (int i = 0; i < this.batchSize; i++) {
 				Event event = channel.take();
 				if (event == null) {
@@ -238,7 +170,7 @@ public class FlumeSourceSpout implements IRichSpout {
 				batch.add(event);
 			}
 
-			//Update the counters if the batch is empty or underFlow
+
 			size = batch.size();
 			if (size == 0) {
 				sinkCounter.incrementBatchEmptyCount();
@@ -251,24 +183,18 @@ public class FlumeSourceSpout implements IRichSpout {
 				sinkCounter.addToEventDrainAttemptCount(size);
 			}
 
-			// Emit all the the events in the topology before committing the
-			// transaction
+
 			for (Event event : batch) {
-
 				Values vals = this.getAvroTupleProducer().toTuple(event);
-
+				//Emit tuple with ability to process fail state
 				this.outputCollector.emit(vals, event);
-				this.pendingMessages.put(
-						event.getHeaders().get(Constants.MESSAGE_ID), event);
 				LOG.debug("NextTuple:"
 						+ event.getHeaders().get(Constants.MESSAGE_ID));
 			}
-			//Everything went fine. Commit the transaction 
 			transaction.commit();
 			sinkCounter.addToEventDrainSuccessCount(size);
 
 		} catch (Throwable t) {
-			//On error, roll back the whole batch
 			transaction.rollback();
 			if (t instanceof Error) {
 				throw (Error) t;
@@ -283,54 +209,33 @@ public class FlumeSourceSpout implements IRichSpout {
 			transaction.close();
 		}
 
-		//if we come across empty batch, sleep for some time as the load is not that high anyways
+		LOG.info("Sleeping at empty batch...");
 		if (size == 0) {
 			Utils.sleep(100);
 		}
 	}
 
-	/*
-	 * When a message is succeeded remove from the pending list
-	 * 
-	 * @see backtype.storm.spout.ISpout#ack(java.lang.Object)
-	 */
-    @Override
-	public void ack(Object msgId) {
-		this.pendingMessages.remove(msgId);
-
-		System.out.println("IN>> [" + Thread.currentThread().getId() + "] message " +
-				msgId + " processed successfully");
-	}
-
-
 	@Override
 	public void fail(Object msgId) {
-		//TODO implement retry
-        Event event = (Event)msgId;
-        System.out.println("FAILED Event data: "+new String(event.getBody()));
-        /*
-		Event m = this.pendingMessages.get(msgId);
-		channel.put();
-		if(++m.failCount > MAX_RETRY_COUNT) {
-			throw new IllegalStateException("Too many message processing errors");
-		}
-		System.out.println("IN>> [" + Thread.currentThread().getId() + "] message " +
-				m.message + " processing failed " + "[" + m.failCount + "]");
-// Вставляем в очередь на повторную обработку
-		sendQueue.addLast((Integer) msgId);
-		*/
+		//Here you can implement logic to Tuples that failed at processing state
+		System.out.println("FAILED msgId: " + msgId);
+
+	}
+    @Override
+	public void ack(Object msgId) {
+		LOG.info("Message proceeded successfully " + msgId);
 	}
 
-    @Override
-	public Map<String, Object> getComponentConfiguration() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-    @Override
+	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		this.getAvroTupleProducer().declareOutputFields(declarer);
 	}
+    @Override
+	public Map<String, Object> getComponentConfiguration() {
+		return null;
+	}
+
+
 
 
 }

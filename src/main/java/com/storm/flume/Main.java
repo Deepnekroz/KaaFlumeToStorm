@@ -27,20 +27,22 @@ import com.storm.flume.producer.SimpleAvroFlumeEventProducer;
 import com.storm.flume.producer.SimpleAvroTupleProducer;
 import com.storm.flume.spout.FlumeSourceSpout;
 import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 import java.io.FileInputStream;
 import java.util.Properties;
 
 
 public class Main {
     public static void main(String[] args) throws Throwable{
-        Logger.getRootLogger().setLevel(Level.FATAL);
+        org.apache.log4j.Logger.getRootLogger().setLevel(Level.WARN);
+        Logger LOG = LoggerFactory.getLogger(Main.class);
 
-
+        if(args.length==0){
+            LOG.error("No path to properties was given! Check args");
+        }
         Properties props = new Properties();
-        props.load(new FileInputStream("/home/dmitry-sergeev/Downloads/apache-flume-1.6.0-bin/conf/flume-conf.properties.template"));
-
+        props.load(new FileInputStream(args[0]));
 
         TopologyBuilder builder = new TopologyBuilder();
         FlumeSourceSpout spout = new FlumeSourceSpout();
@@ -53,6 +55,7 @@ public class Main {
 
         AvroSinkBolt bolt = new AvroSinkBolt();
         bolt.setProducer(new SimpleAvroFlumeEventProducer());
+        //Set 2 threads bolt
         builder.setBolt("AvroSinkBolt", bolt, 2).shuffleGrouping("FlumeSourceSpout").addConfigurations(props);
 
         Config config = new Config(); //Default configuration
@@ -60,7 +63,10 @@ public class Main {
 
         LocalCluster cluster = new LocalCluster();
         cluster.submitTopology("T1", config, builder.createTopology());
-        //Thread.sleep(1000*10);
+        LOG.info("Topology running...");
+
+
+        //Kill topology if needed
         //cluster.shutdown();
     }
 }

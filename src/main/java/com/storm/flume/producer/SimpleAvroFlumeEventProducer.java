@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.flume.Event;
 import org.apache.flume.event.EventBuilder;
+import org.apache.flume.event.SimpleEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,12 +37,7 @@ import backtype.storm.tuple.Tuple;
 public class SimpleAvroFlumeEventProducer implements AvroFlumeEventProducer {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SimpleAvroFlumeEventProducer.class);
-	
-	private static final String CHARSET = "UTF-8";
-	
-	public static String getCharset() {
-		return CHARSET;
-	}
+
 
 	@SuppressWarnings("unchecked")
 	public Event toEvent(Tuple input) throws Exception {
@@ -49,11 +45,7 @@ public class SimpleAvroFlumeEventProducer implements AvroFlumeEventProducer {
 		Map<String, String> headers;
 		Object headerObj;
 		Object messageObj;
-		String messageStr;
-		
-		/*If the number of parameters are two, they are assumed as MessageId and Message
-		 *If the number of parameters are three, they are assumed as MessageId, Headers and Message
-		 */
+
 		if(input.size()==2){
 			messageObj = input.getValue(1);
 			headers = new HashMap<String, String>();
@@ -62,18 +54,11 @@ public class SimpleAvroFlumeEventProducer implements AvroFlumeEventProducer {
 		}else if(input.size()==3){
 			headerObj = input.getValue(1);
 			messageObj = input.getValue(2);
-			headers = (Map<String, String>)headerObj;	
-			
-			LOG.debug("String format of object:" +  ((String)input.getValue(2)));
+			headers = (Map<String, String>)headerObj;
 		}else{
-			throw new IllegalStateException("Wrong format of touple expected 2 or 3 values. But found " + input.size());
+			throw new IllegalStateException("Wrong format of tuple expected 2 or 3 values. But found " + input.size());
 		}
-
-		messageStr = (String)messageObj;
-		   
-		LOG.debug("SimpleAvroFlumeEventProducer:MSG:" + messageStr);
-
-		return EventBuilder.withBody(messageStr.getBytes(), headers);
+		return EventBuilder.withBody(((SimpleEvent)messageObj).getBody(), headers);
 
 	}
 

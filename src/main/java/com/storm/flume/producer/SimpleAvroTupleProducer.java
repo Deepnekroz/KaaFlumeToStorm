@@ -36,14 +36,13 @@ public class SimpleAvroTupleProducer implements AvroTupleProducer{
 	public Values toTuple(Event event) throws Exception {
 		String msgID = event.getHeaders().get(Constants.MESSAGE_ID);
 		
-		//if MessageID header doesnt exists, set the MessageId
+		//set the msgId if not present
 		if(null == msgID) {
 			UUID randMsgID = UUID.randomUUID();
 			msgID = randMsgID.toString();
 			event.getHeaders().put(Constants.MESSAGE_ID, msgID);
 		}
-		String msg = new String(event.getBody());
-		return new Values(msgID,msg);
+		return new Values(msgID,event);
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {

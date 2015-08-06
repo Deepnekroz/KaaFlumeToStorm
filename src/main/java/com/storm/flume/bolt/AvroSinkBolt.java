@@ -16,6 +16,7 @@ package com.storm.flume.bolt;
  * limitations under the License.
  */
 
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Properties;
 import org.apache.flume.Event;
@@ -27,29 +28,22 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Tuple;
+import org.kaaproject.kaa.server.common.log.shared.KaaFlumeEventReader;
+import org.kaaproject.kaa.schema.sample.logging.LogData;
 
 @SuppressWarnings("serial")
 public class AvroSinkBolt implements IRichBolt {
 
     private static final Logger LOG = LoggerFactory.getLogger(AvroSinkBolt.class);
     public static final String DEFAULT_FLUME_PROPERTY_PREFIX = "flume-avro-forward";
-    
-    private Properties sinkProperties;
+
+    private static KaaFlumeEventReader<LogData> kaaReader = new KaaFlumeEventReader<LogData>(LogData.class);
     private AvroFlumeEventProducer producer;
     private OutputCollector collector;
-    private String flumePropertyPrefix = DEFAULT_FLUME_PROPERTY_PREFIX;
 
     public String getFlumePropertyPrefix() {
-		return flumePropertyPrefix;
+		return DEFAULT_FLUME_PROPERTY_PREFIX;
 	}
-
-	public void setFlumePropertyPrefix(String flumePropertPrefix) {
-		this.flumePropertyPrefix = flumePropertPrefix;
-	}
-
-	public AvroFlumeEventProducer getProducer() {
-        return producer;
-    }
 
     public void setProducer(AvroFlumeEventProducer producer) {
         this.producer = producer;
@@ -59,14 +53,12 @@ public class AvroSinkBolt implements IRichBolt {
     public void prepare(Map config, TopologyContext context, OutputCollector collector) {
     	
         this.collector = collector;
-        sinkProperties = new Properties();
+        Properties sinkProperties  = new Properties();
         LOG.info("Looking for flume properties");
 		for (Object key : config.keySet()) {
 			if (key.toString().startsWith(this.getFlumePropertyPrefix())) {
-				LOG.info("Found:Key:" + key.toString() + ":" + (String) config.get(key));
-				sinkProperties.put(
-							key.toString().replace(this.getFlumePropertyPrefix() + ".",
-									""), (String) config.get(key));
+				LOG.info("Found:Key:" + key.toString() + ":" + config.get(key));
+				sinkProperties.put(key.toString().replace(this.getFlumePropertyPrefix() + ".",""), config.get(key));
 			}
 		}
 
@@ -75,7 +67,11 @@ public class AvroSinkBolt implements IRichBolt {
     public void execute(Tuple input) {
 
         try {
+
             Event event = this.producer.toEvent(input);
+            for(LogData logData: kaaReader.decodeRecords(ByteBuffer.wrap(event.getBody()))){
+                System.out.println(logData) ;
+            }
             LOG.info("Event Created: " + event.toString() + ":MSG:" + new String(event.getBody()));
 
             //Example of failed Tuple

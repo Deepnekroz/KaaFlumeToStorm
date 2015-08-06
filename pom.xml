@@ -11,15 +11,10 @@
 	<properties>
 		<flume.version>1.3.0-cdh4.2.1</flume.version>
 		<hadoop.version>2.0.0-cdh4.2.1</hadoop.version>
+        <kaa.version>0.7.1</kaa.version>
 	</properties>
 
-    <scm>
-        <connection>scm:git:git@github.com:ExpediaInc/edw-Storm-Flume-Connectors.git</connection>
-        <url>scm:git:git@github.com:ExpediaInc/edw-Storm-Flume-Connectors.git</url>
-        <developerConnection>scm:git:git@github.com:ExpediaInc/edw-Storm-Flume-Connectors.git</developerConnection>
-        <tag>HEAD</tag>
-    </scm>
-	
+
     <repositories>
         <repository>
             <id>clojars.org</id>
@@ -30,9 +25,19 @@
 		    <name>CDH Maven Repository</name>
 		    <url>https://repository.cloudera.com/content/repositories/releases/</url>
 		</repository>
+        <repository>
+            <id>repository.kaaproject</id>
+            <url>http://repository.kaaproject.org/repository/releases</url>
+        </repository>
     </repositories>
 
     <dependencies>
+        <dependency>
+            <artifactId>log-shared</artifactId>
+            <groupId>org.kaaproject.kaa.server.common</groupId>
+            <version>${kaa.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -77,14 +82,11 @@
   		  <version>${hadoop.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.5</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.5</version>
+            <groupId>org.kaaproject.kaa</groupId>
+            <artifactId>client-sdk</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/kaa-client-sdk-p1-c1-n1-l2.jar</systemPath>
         </dependency>
 
 
@@ -118,18 +120,5 @@
             </plugins>
         </pluginManagement>
     </build>
-    
-    <distributionManagement>
-        <repository>
-            <id>edw-build-release</id>
-            <name>EDW Build Release Repository</name>
-            <url>http://edw-build-test.karmalab.net:8080/nexus/content/repositories/releases/</url>
-        </repository>
-        <snapshotRepository>
-            <id>edw-build-snapshots</id>
-            <name>EDW Build Snapshots Repository</name>
-            <url>http://edw-build-test.karmalab.net:8080/nexus/content/repositories/snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
 
 </project>

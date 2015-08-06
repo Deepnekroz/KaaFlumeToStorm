@@ -23,5 +23,4 @@ class MemoryConfigurationProvider extends AbstractConfigurationProvider {
   protected FlumeConfiguration getFlumeConfiguration() {
     return new FlumeConfiguration(properties);
   }
-
 }

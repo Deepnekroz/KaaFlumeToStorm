@@ -1,20 +1,4 @@
-/*
- * Copyright 2014-2015 CyberVision, Inc.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- *
- */
+
 
 package com.storm.flume.common;
 
@@ -78,7 +62,6 @@ public class StormEmbeddedAgentConfiguration {
    */
   private static void validate(String name,
       Map<String, String> properties) throws FlumeException {
-
     if(properties.containsKey(SOURCE_TYPE)) {
       checkAllowed(ALLOWED_SOURCES, properties.get(SOURCE_TYPE));
     }
@@ -96,10 +79,8 @@ public class StormEmbeddedAgentConfiguration {
         equalsIgnoreCase(properties.get(SOURCE_TYPE))) {
       properties.put(SOURCE_TYPE, SOURCE_TYPE_AVRO);
     }
-    
     String sourceName = "src-" + name;
     String channelName = "ch-" + name;
-
 
     Map<String, String> result = Maps.newHashMap();
 
@@ -113,7 +94,6 @@ public class StormEmbeddedAgentConfiguration {
     result.put(join(name,
         BasicConfigurationConstants.CONFIG_SOURCES, sourceName,
         BasicConfigurationConstants.CONFIG_CHANNELS), channelName);
-
 
     userProvidedKeys = new HashSet<String>(properties.keySet());
     for(String key : userProvidedKeys) {
@@ -130,9 +110,7 @@ public class StormEmbeddedAgentConfiguration {
         throw new FlumeException("Unknown/Unsupported configuration " + key);
       }
     }
-    
     System.out.println("result:" + result.toString());
-    
     return result;
   }
   private static void checkAllowed(String[] allowedTypes, String type) {
@@ -145,7 +123,8 @@ public class StormEmbeddedAgentConfiguration {
       }
     }
     if(!isAllowed) {
-      throw new FlumeException("Component type of " + type + " is not in correct types of " + Arrays.toString(allowedTypes));
+      throw new FlumeException("Component type of " + type + " is not in correct types of "
+                                + Arrays.toString(allowedTypes));
     }
   }
   private static void checkRequired(Map<String, String> properties,

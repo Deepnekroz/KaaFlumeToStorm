@@ -73,7 +73,8 @@ public class FlumeSourceSpout implements IRichSpout {
 						this.batchSize = BATCH_SIZE;
 					}
 				} else {
-					flumeAgentProps.put(key.toString().replace(getFlumePropertyPrefix() + ".",""), (String) config.get(key));
+					flumeAgentProps.put(key.toString().replace(getFlumePropertyPrefix() + ".",""),
+																(String) config.get(key));
 				}
 			}
 		}
@@ -100,7 +101,6 @@ public class FlumeSourceSpout implements IRichSpout {
 		if (sinkCounter == null) {
 			sinkCounter = new SinkCounter(FlumeSourceSpout.class.getName());
 		}
-
 		if (null == this.getAvroTupleProducer()) {
 			throw new IllegalStateException("Tuple Producer has not been set.");
 		}
@@ -169,8 +169,6 @@ public class FlumeSourceSpout implements IRichSpout {
 				}
 				batch.add(event);
 			}
-
-
 			size = batch.size();
 			if (size == 0) {
 				sinkCounter.incrementBatchEmptyCount();
@@ -183,7 +181,6 @@ public class FlumeSourceSpout implements IRichSpout {
 				sinkCounter.addToEventDrainAttemptCount(size);
 			}
 
-
 			for (Event event : batch) {
 				Values vals = this.getAvroTupleProducer().toTuple(event);
 				//Emit tuple with ability to process fail state
@@ -193,7 +190,6 @@ public class FlumeSourceSpout implements IRichSpout {
 			}
 			transaction.commit();
 			sinkCounter.addToEventDrainSuccessCount(size);
-
 		} catch (Throwable t) {
 			transaction.rollback();
 			if (t instanceof Error) {
@@ -208,7 +204,6 @@ public class FlumeSourceSpout implements IRichSpout {
 		} finally {
 			transaction.close();
 		}
-
 		LOG.info("Sleeping at empty batch...");
 		if (size == 0) {
 			Utils.sleep(100);
@@ -234,8 +229,4 @@ public class FlumeSourceSpout implements IRichSpout {
 	public Map<String, Object> getComponentConfiguration() {
 		return null;
 	}
-
-
-
-
 }

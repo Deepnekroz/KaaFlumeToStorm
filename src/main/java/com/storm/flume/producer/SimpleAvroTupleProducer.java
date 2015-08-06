@@ -18,7 +18,7 @@ public class SimpleAvroTupleProducer implements AvroTupleProducer{
 
 	public Values toTuple(Event event) throws Exception {
 		String msgID = event.getHeaders().get(Constants.MESSAGE_ID);
-		
+
 		//set the msgId if not present
 		if(null == msgID) {
 			UUID randMsgID = UUID.randomUUID();

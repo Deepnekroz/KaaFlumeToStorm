@@ -26,8 +26,8 @@ public class AvroSinkBolt implements IRichBolt {
     private OutputCollector collector;
 
     public String getFlumePropertyPrefix() {
-		return DEFAULT_FLUME_PROPERTY_PREFIX;
-	}
+        return DEFAULT_FLUME_PROPERTY_PREFIX;
+    }
 
     public void setProducer(AvroFlumeEventProducer producer) {
         this.producer = producer;
@@ -38,13 +38,13 @@ public class AvroSinkBolt implements IRichBolt {
         this.collector = collector;
         Properties sinkProperties  = new Properties();
         LOG.info("Looking for flume properties");
-		for (Object key : config.keySet()) {
-			if (key.toString().startsWith(this.getFlumePropertyPrefix())) {
-				LOG.info("Found:Key:" + key.toString() + ":" + config.get(key));
-				sinkProperties.put(key.toString().replace(this.getFlumePropertyPrefix() + ".",""),
-                                                            config.get(key));
-			}
-		}
+        for (Object key : config.keySet()) {
+            if (key.toString().startsWith(this.getFlumePropertyPrefix())) {
+                LOG.info("Found:Key:" + key.toString() + ":" + config.get(key));
+                sinkProperties.put(key.toString().replace(this.getFlumePropertyPrefix() + ".",""),
+                        config.get(key));
+            }
+        }
     }
 
     public void execute(Tuple input) {

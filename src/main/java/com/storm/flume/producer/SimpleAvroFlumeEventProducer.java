@@ -24,7 +24,7 @@ public class SimpleAvroFlumeEventProducer implements AvroFlumeEventProducer {
 
 	@SuppressWarnings("unchecked")
 	public Event toEvent(Tuple input) throws Exception {
-		
+
 		Map<String, String> headers;
 		Object headerObj;
 		Object messageObj;
@@ -40,7 +40,7 @@ public class SimpleAvroFlumeEventProducer implements AvroFlumeEventProducer {
 			headers = (Map<String, String>)headerObj;
 		}else{
 			throw new IllegalStateException("Wrong format of tuple expected 2 or 3 values. But found "
-											+ input.size());
+					+ input.size());
 		}
 		return EventBuilder.withBody(((SimpleEvent)messageObj).getBody(), headers);
 	}

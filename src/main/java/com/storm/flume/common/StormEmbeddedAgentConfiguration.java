@@ -48,20 +48,20 @@ public class StormEmbeddedAgentConfiguration {
   public static final String SOURCE_TYPE_HTTP = SourceType.HTTP.name();
 
   private static final String[] ALLOWED_SOURCES = {
-    SOURCE_TYPE_AVRO,
-    SOURCE_TYPE_HTTP
+          SOURCE_TYPE_AVRO,
+          SOURCE_TYPE_HTTP
   };
 
   private static final String[] ALLOWED_CHANNELS = {
-    CHANNEL_TYPE_MEMORY,
-    CHANNEL_TYPE_FILE
+          CHANNEL_TYPE_MEMORY,
+          CHANNEL_TYPE_FILE
   };
 
   /*
    * Validates the source and channel configuration for required properties
    */
   private static void validate(String name,
-      Map<String, String> properties) throws FlumeException {
+                               Map<String, String> properties) throws FlumeException {
     if(properties.containsKey(SOURCE_TYPE)) {
       checkAllowed(ALLOWED_SOURCES, properties.get(SOURCE_TYPE));
     }
@@ -70,13 +70,13 @@ public class StormEmbeddedAgentConfiguration {
   }
 
   public static Map<String, String> configure(String name,
-      Map<String, String> properties) throws FlumeException {
+                                              Map<String, String> properties) throws FlumeException {
     validate(name, properties);
     // we are going to modify the properties as we parse the config
     properties = new HashMap<String, String>(properties);
 
     if(!properties.containsKey(SOURCE_TYPE) || SOURCE_TYPE_AVRO.
-        equalsIgnoreCase(properties.get(SOURCE_TYPE))) {
+            equalsIgnoreCase(properties.get(SOURCE_TYPE))) {
       properties.put(SOURCE_TYPE, SOURCE_TYPE_AVRO);
     }
     String sourceName = "src-" + name;
@@ -87,13 +87,13 @@ public class StormEmbeddedAgentConfiguration {
     Set<String> userProvidedKeys;
 
     result.put(join(name, BasicConfigurationConstants.CONFIG_SOURCES),
-        sourceName);
+            sourceName);
     result.put(join(name, BasicConfigurationConstants.CONFIG_CHANNELS),
-        channelName);
-    
+            channelName);
+
     result.put(join(name,
-        BasicConfigurationConstants.CONFIG_SOURCES, sourceName,
-        BasicConfigurationConstants.CONFIG_CHANNELS), channelName);
+            BasicConfigurationConstants.CONFIG_SOURCES, sourceName,
+            BasicConfigurationConstants.CONFIG_CHANNELS), channelName);
 
     userProvidedKeys = new HashSet<String>(properties.keySet());
     for(String key : userProvidedKeys) {
@@ -101,11 +101,11 @@ public class StormEmbeddedAgentConfiguration {
       if(key.startsWith(SOURCE_PREFIX)) {
         key = key.replaceFirst(SOURCE, sourceName);
         result.put(join(name,
-            BasicConfigurationConstants.CONFIG_SOURCES, key), value);
+                BasicConfigurationConstants.CONFIG_SOURCES, key), value);
       } else if(key.startsWith(CHANNEL_PREFIX)) {
         key = key.replaceFirst(CHANNEL, channelName);
         result.put(join(name,
-            BasicConfigurationConstants.CONFIG_CHANNELS, key), value);
+                BasicConfigurationConstants.CONFIG_CHANNELS, key), value);
       } else {
         throw new FlumeException("Unknown/Unsupported configuration " + key);
       }
@@ -124,12 +124,12 @@ public class StormEmbeddedAgentConfiguration {
     }
     if(!isAllowed) {
       throw new FlumeException("Component type of " + type + " is not in correct types of "
-                                + Arrays.toString(allowedTypes));
+              + Arrays.toString(allowedTypes));
     }
   }
   private static void checkRequired(Map<String, String> properties,
-      String name) {
-	  System.out.println(name + ":" + properties.toString());
+                                    String name) {
+    System.out.println(name + ":" + properties.toString());
     if(!properties.containsKey(name)) {
       throw new FlumeException("Parameter not found " + name);
     }

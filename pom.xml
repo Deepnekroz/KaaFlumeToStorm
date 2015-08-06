@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.kaaproject.kaa</groupId>
     <artifactId>kaa-storm-example</artifactId>
-    <name>storm-flume-connectors</name>
+    <name>kaa-storm-example</name>
     <url>http://maven.apache.org</url>
     <properties>
         <flume.version>1.5.0</flume.version>

@@ -10,17 +10,17 @@ import com.storm.flume.producer.AvroTupleProducer;
 import com.storm.flume.producer.SimpleAvroFlumeEventProducer;
 import com.storm.flume.producer.SimpleAvroTupleProducer;
 import com.storm.flume.spout.FlumeSourceSpout;
-import org.apache.log4j.Level;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 import java.io.FileInputStream;
 import java.util.Properties;
-
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 
 public class Main {
     public static void main(String[] args) throws Throwable{
-        org.apache.log4j.Logger.getRootLogger().setLevel(Level.WARN);
-        Logger LOG = LoggerFactory.getLogger(Main.class);
+        Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        root.setLevel(Level.ERROR);
+        Logger LOG = (Logger)LoggerFactory.getLogger(Main.class);
 
         if(args.length==0){
             LOG.error("No path to properties was given! Check args");

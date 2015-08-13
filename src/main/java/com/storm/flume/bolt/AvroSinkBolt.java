@@ -4,7 +4,8 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Properties;
 import org.apache.flume.Event;
-import org.kaaproject.kaa.schema.sample.logging.LogData;
+import org.kaaproject.kaa.examples.powerplant.PowerReport;
+import org.kaaproject.kaa.examples.powerplant.PowerSample;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.storm.flume.producer.AvroFlumeEventProducer;
@@ -21,7 +22,7 @@ public class AvroSinkBolt implements IRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(AvroSinkBolt.class);
     public static final String DEFAULT_FLUME_PROPERTY_PREFIX = "flume-avro-forward";
 
-    private static final KaaFlumeEventReader<LogData> kaaReader = new KaaFlumeEventReader<LogData>(LogData.class);
+    private static final KaaFlumeEventReader<PowerReport> kaaReader = new KaaFlumeEventReader<PowerReport>(PowerReport.class);
     private AvroFlumeEventProducer producer;
     private OutputCollector collector;
 
@@ -50,14 +51,12 @@ public class AvroSinkBolt implements IRichBolt {
     public void execute(Tuple input) {
         try {
             Event event = this.producer.toEvent(input);
-            for(LogData logData: kaaReader.decodeRecords(ByteBuffer.wrap(event.getBody()))){
-                System.out.println(logData) ;
+            for(PowerReport report : kaaReader.decodeRecords(ByteBuffer.wrap(event.getBody()))){
+                for(PowerSample sample : report.getSamples()){
+                    System.out.println(sample.toString());
+                }
             }
             LOG.info("Event Created: " + event.toString() + ":MSG:" + new String(event.getBody()));
-
-            //Example of failed Tuple
-            if("wrong text".equals(new String(event.getBody())))
-                throw new ClassCastException();
 
             //All seems to be nice, notify spout about it
             this.collector.ack(input);

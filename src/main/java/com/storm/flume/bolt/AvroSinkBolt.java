@@ -51,13 +51,17 @@ public class AvroSinkBolt implements IRichBolt {
     public void execute(Tuple input) {
         try {
             Event event = this.producer.toEvent(input);
+            int reportsCount = 0;
+            int samplesCount = 0;
             for(PowerReport report : kaaReader.decodeRecords(ByteBuffer.wrap(event.getBody()))){
+                reportsCount++;
+                samplesCount += report.getSamples().size();
                 for(PowerSample sample : report.getSamples()){
-                    System.out.println(sample.toString());
+                    LOG.debug(sample.toString());
                 }
             }
-            LOG.info("Event Created: " + event.toString() + ":MSG:" + new String(event.getBody()));
-
+            LOG.info("Total records received: " + reportsCount);
+            LOG.info("Total samples received: " + samplesCount);
             //All seems to be nice, notify spout about it
             this.collector.ack(input);
         } catch (Exception e) {

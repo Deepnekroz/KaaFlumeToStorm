@@ -19,7 +19,7 @@ import ch.qos.logback.classic.Logger;
 public class Main {
     public static void main(String[] args) throws Throwable{
         Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        root.setLevel(Level.ERROR);
+        root.setLevel(Level.DEBUG);
         Logger LOG = (Logger)LoggerFactory.getLogger(Main.class);
 
         if(args.length==0){

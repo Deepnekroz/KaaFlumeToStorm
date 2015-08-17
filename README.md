@@ -1,2 +1,2 @@
 # KaaFlumeToStorm
-Storm topology that could receive Flume events
+Apache Storm topology that could receive Apache Flume events
